@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="SvgPathView">
+        <attr name="svgPathString" format="string" />
+        <attr name="strokeColor" format="color" />
+        <attr name="strokeWidth" format="float" />
+        <attr name="needFill" format="boolean" />
+        <attr name="fillColor" format="color" />
+        <attr name="strokeAnimDuration" format="integer" />
+        <attr name="fillAnimDuration" format="integer" />
+        <attr name="animDelay" format="integer" />
+    </declare-styleable>
+
+</resources>
