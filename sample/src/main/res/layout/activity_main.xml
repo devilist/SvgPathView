@@ -20,6 +20,9 @@
 
     </android.support.design.widget.AppBarLayout>
 
+    <com.svg.sample.widget.PathView
+        android:layout_width="400dp"
+        android:layout_height="200dp"/>
 
     <com.devilist.spv.SvgPathView
         android:id="@+id/spv_view0"

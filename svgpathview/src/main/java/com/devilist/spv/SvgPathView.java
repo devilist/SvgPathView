@@ -2,7 +2,6 @@ package com.devilist.spv;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -20,12 +19,12 @@ import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 
 import com.devilist.spv.clippingtransform.ClippingTransform;
-import com.devilist.spv.clippingtransform.WavesClippingTransform;
+import com.devilist.spv.fillpath.FillingOrientation;
+import com.devilist.spv.fillpath.FillingTransform;
+import com.devilist.spv.fillpath.WavesFillingTransform;
 import com.devilist.spv.svgpathpaser.ScaleSvgPathParser;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**
@@ -51,6 +50,7 @@ public class SvgPathView extends View {
     private boolean isNeedFill = false; // 是否需要填充
     private float mFillAnimPertange = 0; // 填充百分比
     private ClippingTransform mClippingTransform; // 填充变换
+    private FillingTransform mFillingTransform;
 
     private long mAnimDelay = 0; // 动画延迟播放时间
 
@@ -227,6 +227,7 @@ public class SvgPathView extends View {
             desirePath = new Path();
         }
         mSvgPath = new SvgPath(desirePath);
+        Log.e(TAG, " Path parsing finished!");
     }
 
     @Override
@@ -234,18 +235,18 @@ public class SvgPathView extends View {
         super.onDraw(canvas);
 
         canvas.translate(getPaddingLeft(), getPaddingTop());
-
         // 路径
         canvas.drawPath(mStrokeAnimPath, mStrokePaint);
-
         // 填充
         if (mAnimState == AnimState.FILL) {
-            if (null == mClippingTransform)
-                mClippingTransform = new WavesClippingTransform();
-            mClippingTransform.transform(canvas, mFillAnimPertange, this);
+//            if (null == mClippingTransform)
+//                mClippingTransform = new WavesClippingTransform();
+//            mClippingTransform.transform(canvas, mFillAnimPertange, this);
+            if (null == mFillingTransform)
+                mFillingTransform = new WavesFillingTransform(FillingOrientation.LEFT_BOTTOM_TO_RIGHT_TOP);
+            mFillingTransform.update(this, canvas, mFillAnimPertange);
             canvas.drawPath(mSvgPath.getPath(), mFillPaint);
         }
-
         // 完成后的补刀
         if (mAnimState == AnimState.FINISH && isNeedFill)
             canvas.drawPath(mSvgPath.getPath(), mFillPaint);
@@ -255,21 +256,26 @@ public class SvgPathView extends View {
      * 播放动画，延迟一段时间，防止view还没有测量完
      */
     public void startAnim() {
-        postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startStrokeAnim();
-            }
-        }, 1500);
-
+        if (null == mSvgPath) {
+            Log.e(TAG, "Waiting for the path parsing finished before anim started...");
+            postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    startAnim();
+                }
+            }, 150);
+        } else {
+            Log.e(TAG, "Anim started!");
+            startStrokeAnim();
+        }
     }
 
     /**
      * 开始路径动画
      * <p>当一个路径文件里包含有多条路径时，需要为每条路径单独设置动画，然后依次播放。
-     * PathMeasure.getLength()获得的是路径中某条子路径的长度；
-     * PathMeasure.getSegment()获得的是路径中某条子路径的片段；
-     * 利用PathMeasure.nextContour()方法可以一次获得每条路径，从而为每条路径设置动画。
+     * <p>PathMeasure.getLength()获得的是路径中某条子路径的长度；
+     * <p>PathMeasure.getSegment()获得的是路径中某条子路径的片段；
+     * <p>利用PathMeasure.nextContour()方法可以一次获得每条路径，从而为每条路径设置动画。
      */
     private void startStrokeAnim() {
         changeAnimState(AnimState.IDLE);
@@ -328,45 +334,6 @@ public class SvgPathView extends View {
         mStrokeAnimPath.lineTo(0, 0);
         mStrokeAnimator.setStartDelay(mAnimDelay);
         mStrokeAnimator.start();
-    }
-
-    private void startStrokeAnimSet() {
-        mStrokeAnimPath.reset();
-        mStrokeAnimPath.rLineTo(0, 0);
-        AnimatorSet mStrokeAnimSet = new AnimatorSet();
-        // 获取路径的PathMeasure
-        final PathMeasure strokePathMeasure = mSvgPath.getPathMeasure();
-        List<Animator> animators = new ArrayList<>();
-        // 子路径动画持续时间
-        long subPathDuration = mStrokeAnimDuration / mSvgPath.getCount();
-        // 遍历每条路径
-        while (strokePathMeasure.getLength() != 0) {
-            ValueAnimator subStrokeAnimator = ValueAnimator.ofFloat(0, 1f);
-            subStrokeAnimator.setDuration(subPathDuration);
-            subStrokeAnimator.setInterpolator(new LinearInterpolator());
-            subStrokeAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    float value = (float) animation.getAnimatedValue();
-                    //更新动画路径
-                    strokePathMeasure.getSegment(0, strokePathMeasure.getLength() * value, mStrokeAnimPath, true);
-                    SvgPathView.this.invalidate();
-                }
-            });
-            subStrokeAnimator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    //当前子路径动画完成后，将PathMeasure移动到下一条子路径
-//                    SvgPathView.this.postInvalidate();
-                    strokePathMeasure.nextContour();
-                }
-            });
-            animators.add(subStrokeAnimator);
-            strokePathMeasure.nextContour();
-        }
-        strokePathMeasure.setPath(mSvgPath.getPath(), false);
-        mStrokeAnimSet.playSequentially(animators);
-        mStrokeAnimSet.start();
     }
 
     /**
@@ -475,7 +442,5 @@ public class SvgPathView extends View {
          * @param animState
          */
         void onAnimStateChange(int animState);
-
     }
-
 }
