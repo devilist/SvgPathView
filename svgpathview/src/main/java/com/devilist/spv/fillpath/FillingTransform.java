@@ -4,7 +4,7 @@ import android.graphics.Canvas;
 import android.view.View;
 
 /**
- * 填充区域变换
+ * 填充效果
  * Created by zengpu on 2017/1/16.
  */
 

@@ -9,13 +9,14 @@ import android.view.View;
 import java.util.Random;
 
 /**
- * 波纹填充
+ * 波纹填充效果
  * Created by zengpu on 2017/1/16.
  */
 
 public class WavesFillingTransform implements FillingTransform {
 
     private static final String TAG = WavesFillingTransform.class.getSimpleName();
+
     private int mFillingOrientation = 0;
     private int mViewWidth, mViewHeight;
     private float mClippingWidth, mClippingHeight;
@@ -34,9 +35,9 @@ public class WavesFillingTransform implements FillingTransform {
     @Override
     public void update(View view, Canvas canvas, float percentage) {
         updateDimensions(view.getWidth(), view.getHeight());
-        updateFillingPath();
+        updateFillingPath(percentage);
         rotateAndTransClippingArea();
-        updateClippingPath(canvas, percentage);
+        updateClipping(canvas, percentage);
     }
 
     /**
@@ -54,7 +55,7 @@ public class WavesFillingTransform implements FillingTransform {
     }
 
     /**
-     * 根据填充的方向计算填充区域的尺寸
+     * 根据填充的方向计算用于剪切的填充区域的尺寸
      */
     private void updateFillingDimensions() {
         if (mFillingOrientation == FillingOrientation.BOTTOM_TO_TOP
@@ -91,9 +92,17 @@ public class WavesFillingTransform implements FillingTransform {
         }
     }
 
-    private void updateFillingPath() {
+    private void updateFillingPath(float percentage) {
         mWavesPath = new Path();
-        buildWaveAtIndex(mCurrentWave++ % 128, 128);
+        if (mFillingOrientation == FillingOrientation.INNER_TO_OUT) {
+            mWavesPath.addCircle(mViewWidth / 2, mViewHeight / 2, percentage * mClippingWidth, Path.Direction.CCW);
+            mWavesPath.close();
+        } else if (mFillingOrientation == FillingOrientation.OUT_TO_INNER) {
+            mWavesPath.addCircle(mViewWidth / 2, mViewHeight / 2, (1 - percentage) * mClippingWidth, Path.Direction.CCW);
+            mWavesPath.close();
+        } else {
+            buildWaveAtIndex(mCurrentWave++ % 128, 128);
+        }
     }
 
     private void buildWaveAtIndex(int index, int waveCount) {
@@ -184,7 +193,13 @@ public class WavesFillingTransform implements FillingTransform {
     }
 
     /**
-     * 旋转平移填充剪切区域45度
+     * 旋转平移填充剪切区域（十种情况）
+     * <p>
+     * <p>LEFT_TOP_TO_RIGHT_BOTTOM, RIGHT_BOTTOM_TO_LEFT_TOP : 逆时针旋转45度，然后平移
+     * <p>LEFT_BOTTOM_TO_RIGHT_TOP，RIGHT_TOP_TO_LEFT_BOTTOM : 顺时针旋转45度，然后平移
+     * <p>TOP_TO_BOTTOM：平移
+     * <p>LEFT_TO_RIGHT，RIGHT_TO_LEFT：逆时针旋转90度，然后平移
+     * <p>BOTTOM_TO_TOP, INNER_TO_OUT, OUT_TO_INNER : 不做变换
      */
     private void rotateAndTransClippingArea() {
         Matrix matrix = new Matrix();
@@ -221,9 +236,11 @@ public class WavesFillingTransform implements FillingTransform {
     }
 
     /**
-     * 剪切
+     * 根据不同的填充方向对wavepath剪切
+     * <p> mWavesPath.offset(offsetX, offsetY) 将path偏移
+     * <p> canvas.clipPath(mWavesPath, op) 剪切path
      */
-    private void updateClippingPath(Canvas canvas, float percentage) {
+    private void updateClipping(Canvas canvas, float percentage) {
         float offsetX = 0;
         float offsetY = 0;
         Region.Op op = Region.Op.DIFFERENCE;
@@ -244,7 +261,7 @@ public class WavesFillingTransform implements FillingTransform {
 
         } else if (mFillingOrientation == FillingOrientation.LEFT_TO_RIGHT) {
             if (mViewWidth < mViewHeight) {
-                offsetX = (mClippingWidth - mViewWidth) * percentage - mClippingWidth;
+                offsetX = (mViewWidth) * percentage - mClippingWidth;
             } else {
                 offsetX = (mViewWidth - mViewHeight + mClippingWidth) * percentage - mClippingWidth;
             }
@@ -275,6 +292,13 @@ public class WavesFillingTransform implements FillingTransform {
             offsetX = 0.707f * mClippingWidth * (1 - percentage);
             offsetY = -0.707f * mClippingHeight * (1 - percentage);
             op = Region.Op.INTERSECT;
+
+        } else if (mFillingOrientation == FillingOrientation.INNER_TO_OUT) {
+            offsetX = offsetY = 0;
+            op = Region.Op.INTERSECT;
+        } else if (mFillingOrientation == FillingOrientation.OUT_TO_INNER) {
+            offsetX = offsetY = 0;
+            op = Region.Op.DIFFERENCE;
         }
 
         mWavesPath.offset(offsetX, offsetY);

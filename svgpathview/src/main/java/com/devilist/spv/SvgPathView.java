@@ -18,7 +18,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 
-import com.devilist.spv.clippingtransform.ClippingTransform;
 import com.devilist.spv.fillpath.FillingOrientation;
 import com.devilist.spv.fillpath.FillingTransform;
 import com.devilist.spv.fillpath.WavesFillingTransform;
@@ -49,10 +48,11 @@ public class SvgPathView extends View {
     private long mFillAnimDuration = 2000; // 填充动画时间
     private boolean isNeedFill = false; // 是否需要填充
     private float mFillAnimPertange = 0; // 填充百分比
-    private ClippingTransform mClippingTransform; // 填充变换
-    private FillingTransform mFillingTransform;
+    private FillingTransform mFillingTransform; // 填充变换
+    private int mFillingOrientation = FillingOrientation.BOTTOM_TO_TOP;// 填充方向
 
     private long mAnimDelay = 0; // 动画延迟播放时间
+    private ValueAnimator mStrokeAnimator, mFillAnimator;
 
     private SvgPath mSvgPath; // 路径封装类
     private Path mStrokeAnimPath; // 动画路径
@@ -239,11 +239,8 @@ public class SvgPathView extends View {
         canvas.drawPath(mStrokeAnimPath, mStrokePaint);
         // 填充
         if (mAnimState == AnimState.FILL) {
-//            if (null == mClippingTransform)
-//                mClippingTransform = new WavesClippingTransform();
-//            mClippingTransform.transform(canvas, mFillAnimPertange, this);
             if (null == mFillingTransform)
-                mFillingTransform = new WavesFillingTransform(FillingOrientation.LEFT_BOTTOM_TO_RIGHT_TOP);
+                mFillingTransform = new WavesFillingTransform(mFillingOrientation);
             mFillingTransform.update(this, canvas, mFillAnimPertange);
             canvas.drawPath(mSvgPath.getPath(), mFillPaint);
         }
@@ -256,6 +253,7 @@ public class SvgPathView extends View {
      * 播放动画，延迟一段时间，防止view还没有测量完
      */
     public void startAnim() {
+        stopAnim();
         if (null == mSvgPath) {
             Log.e(TAG, "Waiting for the path parsing finished before anim started...");
             postDelayed(new Runnable() {
@@ -267,6 +265,17 @@ public class SvgPathView extends View {
         } else {
             Log.e(TAG, "Anim started!");
             startStrokeAnim();
+        }
+    }
+
+    private void stopAnim() {
+        if (null != mStrokeAnimator && mStrokeAnimator.isRunning()) {
+            mStrokeAnimator.end();
+            invalidate();
+        }
+        if (null != mFillAnimator && mFillAnimator.isRunning()) {
+            mFillAnimator.end();
+            invalidate();
         }
     }
 
@@ -289,7 +298,7 @@ public class SvgPathView extends View {
         final PathMeasure strokePathMeasure = mSvgPath.getPathMeasure();
         // 子路径持续时间
         long subPathDuration = mStrokeAnimDuration / mSvgPath.getCount();
-        final ValueAnimator mStrokeAnimator = ValueAnimator.ofFloat(0, 1f);
+        mStrokeAnimator = ValueAnimator.ofFloat(0, 1f);
         mStrokeAnimator.setDuration(subPathDuration);
         mStrokeAnimator.setRepeatCount(ValueAnimator.INFINITE);
         mStrokeAnimator.setInterpolator(new LinearInterpolator());
@@ -341,7 +350,7 @@ public class SvgPathView extends View {
      */
     private void startFillAnim() {
 
-        ValueAnimator mFillAnimator = ValueAnimator.ofFloat(0, 1f);
+        mFillAnimator = ValueAnimator.ofFloat(0, 1f);
         mFillAnimator.setDuration(mFillAnimDuration);
         mFillAnimator.setInterpolator(new LinearInterpolator());
         mFillAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -421,8 +430,13 @@ public class SvgPathView extends View {
         return this;
     }
 
-    public SvgPathView setClippingTransform(ClippingTransform clippingTransform) {
-        this.mClippingTransform = clippingTransform;
+    public SvgPathView setFillingOrientation(int orientation) {
+        this.mFillingOrientation = orientation;
+        return this;
+    }
+
+    public SvgPathView setFillingTransform(FillingTransform transform) {
+        this.mFillingTransform = transform;
         return this;
     }
 
