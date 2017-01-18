@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         svgPathView.startAnim();
 
         fill_orientation = FillingOrientation.BOTTOM_TO_TOP;
-        path_string = getResources().getString(R.string.poems_hhl);
+        path_string = getResources().getString(R.string.path_world_map);
 
         rg_path.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override

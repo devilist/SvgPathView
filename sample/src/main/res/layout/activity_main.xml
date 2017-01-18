@@ -118,7 +118,7 @@
                         android:inputType="number"
                         android:paddingLeft="10dp"
                         android:paddingRight="10dp"
-                        android:text="500"
+                        android:text="10"
                         android:textColor="@color/colorAccent"
                         android:textSize="14sp"/>
                 </LinearLayout>
@@ -170,7 +170,7 @@
                         android:inputType="number"
                         android:paddingLeft="10dp"
                         android:paddingRight="10dp"
-                        android:text="1.0"
+                        android:text="1.5"
                         android:textColor="@color/colorAccent"
                         android:textSize="14sp"/>
                 </LinearLayout>
@@ -245,7 +245,7 @@
                         android:inputType="number"
                         android:paddingLeft="10dp"
                         android:paddingRight="10dp"
-                        android:text="2000"
+                        android:text="8000"
                         android:textColor="@color/colorAccent"
                         android:textSize="14sp"/>
 
@@ -308,7 +308,6 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginRight="5dp"
-                                android:checked="true"
                                 android:text="路径1"/>
 
                             <RadioButton
@@ -329,6 +328,7 @@
                                 android:id="@+id/rb_path_4"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:checked="true"
                                 android:text="路径4"/>
 
                         </RadioGroup>

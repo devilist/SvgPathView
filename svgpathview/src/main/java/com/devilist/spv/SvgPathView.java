@@ -27,6 +27,7 @@ import java.text.ParseException;
 
 
 /**
+ * 一个显示路径动画和填充动画的view
  * Created by zengpu on 2017/1/13.
  */
 

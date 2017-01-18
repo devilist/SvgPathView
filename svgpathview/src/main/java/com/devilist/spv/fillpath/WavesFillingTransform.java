@@ -6,8 +6,6 @@ import android.graphics.Path;
 import android.graphics.Region;
 import android.view.View;
 
-import java.util.Random;
-
 /**
  * 波纹填充效果
  * Created by zengpu on 2017/1/16.
@@ -21,7 +19,7 @@ public class WavesFillingTransform implements FillingTransform {
     private int mViewWidth, mViewHeight;
     private float mClippingWidth, mClippingHeight;
     private Path mWavesPath;
-    private int mCurrentWave = 0;
+    private int mCurrentIndex = 0;
     private int mWaveHeight = 40;
 
     public WavesFillingTransform() {
@@ -34,9 +32,13 @@ public class WavesFillingTransform implements FillingTransform {
 
     @Override
     public void update(View view, Canvas canvas, float percentage) {
+        // 1.根据填充方向计算相关尺寸
         updateDimensions(view.getWidth(), view.getHeight());
+        // 2.生成闭合波纹路径
         updateFillingPath(percentage);
+        // 3.根据填充方向对波纹路径旋转和平移
         rotateAndTransClippingArea();
+        // 4.用波纹路径在canvas上进行剪切操作，布尔运算
         updateClipping(canvas, percentage);
     }
 
@@ -92,6 +94,10 @@ public class WavesFillingTransform implements FillingTransform {
         }
     }
 
+    /**
+     * 生成波纹路径
+     * @param percentage
+     */
     private void updateFillingPath(float percentage) {
         mWavesPath = new Path();
         if (mFillingOrientation == FillingOrientation.INNER_TO_OUT) {
@@ -101,95 +107,50 @@ public class WavesFillingTransform implements FillingTransform {
             mWavesPath.addCircle(mViewWidth / 2, mViewHeight / 2, (1 - percentage) * mClippingWidth, Path.Direction.CCW);
             mWavesPath.close();
         } else {
-            buildWaveAtIndex(mCurrentWave++ % 128, 128);
+            createWaveAtIndex(mCurrentIndex++ % 128, 128);
         }
     }
 
-    private void buildWaveAtIndex(int index, int waveCount) {
+    /**
+     * 在 2 * mClippingWidth 的宽度上产生mWaveNumber个波纹
+     *
+     * @param index
+     * @param maxIndex
+     */
+    private void createWaveAtIndex(int index, int maxIndex) {
+        int mWaveNumber = 6; // 波纹个数
+        float waveWidth = 2 * mClippingWidth / mWaveNumber; // 一个波纹(2pi)的宽度
+        float variationY = mWaveHeight / 2; // 波纹的振幅一半
 
-        float startingHeight = mClippingHeight - mWaveHeight;
-        boolean initialOrLast = (index == 1 || index == waveCount);
+        float startingHeight = mClippingHeight - mWaveHeight / 2; // 波纹开始坐标Y
+        float xOffset = mClippingWidth * 1f * index / maxIndex; // 波纹X方向的章动
 
-        float xMovement = (mClippingWidth * 1f / waveCount) * index;
-        float divisions = 8;
-        float variation = mWaveHeight / 2; // 振幅
-
-        mWavesPath.moveTo(-mClippingWidth, startingHeight);
-
-        // First wave
-        if (!initialOrLast) {
-            variation = randomFloat();
+        // 移动到第一个点
+        mWavesPath.moveTo(-mClippingWidth + xOffset - 50, startingHeight);
+        // 产生16个波纹
+        for (int i = 0; i < mWaveNumber; i++) {
+            // 前半个波
+            float x1 = -mClippingWidth + waveWidth * (i + 0.25f) + xOffset;
+            float y1 = startingHeight - createRandomVariation(variationY);
+            float x2 = -mClippingWidth + waveWidth * (i + 0.5f) + xOffset;
+            float y2 = startingHeight;
+            mWavesPath.quadTo(x1, y1, x2, y2);
+            // 后半个波
+            float x3 = -mClippingWidth + waveWidth * (i + 0.75f) + xOffset;
+            float y3 = startingHeight + createRandomVariation(variationY);
+            float x4 = -mClippingWidth + waveWidth * (i + 1f) + xOffset;
+            float y4 = startingHeight;
+            mWavesPath.quadTo(x3, y3, x4, y4);
         }
-
-        mWavesPath.quadTo(-mClippingWidth + mClippingWidth * 1f / divisions + xMovement, startingHeight + variation,
-                -mClippingWidth + mClippingWidth * 1f / 4 + xMovement, startingHeight);
-
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(-mClippingWidth + mClippingWidth * 1f / divisions * 3 + xMovement, startingHeight - variation,
-                -mClippingWidth + mClippingWidth * 1f / 2 + xMovement, startingHeight);
-
-        // Second wave
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(-mClippingWidth + mClippingWidth * 1f / divisions * 5 + xMovement, startingHeight + variation,
-                -mClippingWidth + mClippingWidth * 1f / 4 * 3 + xMovement, startingHeight);
-
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(-mClippingWidth + mClippingWidth * 1f / divisions * 7 + xMovement, startingHeight - variation,
-                -mClippingWidth + mClippingWidth + xMovement, startingHeight);
-
-        // Third wave
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(mClippingWidth * 1f / divisions + xMovement, startingHeight + variation,
-                mClippingWidth * 1f / 4 + xMovement, startingHeight);
-
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(mClippingWidth * 1f / divisions * 3 + xMovement, startingHeight - variation,
-                mClippingWidth * 1f / 2 + xMovement, startingHeight);
-
-        // Forth wave
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(mClippingWidth * 1f / divisions * 5 + xMovement, startingHeight + variation,
-                mClippingWidth * 1f / 4 * 3 + xMovement, startingHeight);
-
-        if (!initialOrLast) {
-            variation = randomFloat();
-        }
-
-        mWavesPath.quadTo(mClippingWidth * 1f / divisions * 7 + xMovement, startingHeight - variation,
-                mClippingWidth + xMovement, startingHeight);
-
-        // Closing path
+        // 封闭path
         mWavesPath.lineTo(mClippingWidth + 100, startingHeight);
         mWavesPath.lineTo(mClippingWidth + 100, 0);
         mWavesPath.lineTo(0, 0);
         mWavesPath.close();
     }
 
-    private float randomFloat() {
-        return nextFloat(10) + mClippingHeight * 1f / 25;
-    }
-
-    private float nextFloat(float upperBound) {
-        Random random = new Random();
-        return (Math.abs(random.nextFloat()) % (upperBound + 1));
+    private float createRandomVariation(float base) {
+        return (float) (base + Math.abs(Math.random()) * base / 2);
     }
 
     /**
@@ -218,8 +179,8 @@ public class WavesFillingTransform implements FillingTransform {
 
         } else if (mFillingOrientation == FillingOrientation.RIGHT_TOP_TO_LEFT_BOTTOM) {
             matrix.preRotate(45f);
-            matrix.postTranslate(0.5f * mViewWidth + 1.414f / 2 * (mClippingWidth - mViewHeight),
-                    -0.5f * mViewWidth + 1.414f / 2 * (mClippingWidth - mViewHeight));
+            matrix.postTranslate(0.5f * mViewWidth + 1.414f / 2 * (mClippingWidth - mWaveHeight),
+                    -0.5f * mViewWidth - 1.414f / 2 * (mClippingWidth - mWaveHeight));
 
         } else if (mFillingOrientation == FillingOrientation.TOP_TO_BOTTOM) {
             matrix.preTranslate(0, -mClippingHeight + mViewHeight);
@@ -289,13 +250,14 @@ public class WavesFillingTransform implements FillingTransform {
             op = Region.Op.DIFFERENCE;
 
         } else if (mFillingOrientation == FillingOrientation.RIGHT_TOP_TO_LEFT_BOTTOM) {
-            offsetX = 0.707f * mClippingWidth * (1 - percentage);
-            offsetY = -0.707f * mClippingHeight * (1 - percentage);
+            offsetX = -0.707f * (mClippingWidth - mWaveHeight) * percentage;
+            offsetY = 0.707f * (mClippingHeight - mWaveHeight) * percentage;
             op = Region.Op.INTERSECT;
 
         } else if (mFillingOrientation == FillingOrientation.INNER_TO_OUT) {
             offsetX = offsetY = 0;
             op = Region.Op.INTERSECT;
+
         } else if (mFillingOrientation == FillingOrientation.OUT_TO_INNER) {
             offsetX = offsetY = 0;
             op = Region.Op.DIFFERENCE;
