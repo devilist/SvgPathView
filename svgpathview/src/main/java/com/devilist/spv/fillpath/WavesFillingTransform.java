@@ -17,10 +17,10 @@ public class WavesFillingTransform implements FillingTransform {
 
     private int mFillingOrientation = 0;
     private int mViewWidth, mViewHeight;
-    private float mClippingWidth, mClippingHeight;
+    private float mClippingWidth, mClippingHeight; // 波纹封闭路径的宽高
     private Path mWavesPath;
     private int mCurrentIndex = 0;
-    private int mWaveHeight = 40;
+    private int mWaveHeight = 40; // 波纹震动幅度
 
     public WavesFillingTransform() {
         this(FillingOrientation.BOTTOM_TO_TOP);
@@ -96,6 +96,7 @@ public class WavesFillingTransform implements FillingTransform {
 
     /**
      * 生成波纹路径
+     *
      * @param percentage
      */
     private void updateFillingPath(float percentage) {
@@ -118,8 +119,8 @@ public class WavesFillingTransform implements FillingTransform {
      * @param maxIndex
      */
     private void createWaveAtIndex(int index, int maxIndex) {
-        int mWaveNumber = 6; // 波纹个数
-        float waveWidth = 2 * mClippingWidth / mWaveNumber; // 一个波纹(2pi)的宽度
+        int waveNumber = 6; // 波纹个数
+        float waveWidth = 2 * mClippingWidth / waveNumber; // 一个波纹(2pi)的宽度
         float variationY = mWaveHeight / 2; // 波纹的振幅一半
 
         float startingHeight = mClippingHeight - mWaveHeight / 2; // 波纹开始坐标Y
@@ -127,8 +128,8 @@ public class WavesFillingTransform implements FillingTransform {
 
         // 移动到第一个点
         mWavesPath.moveTo(-mClippingWidth + xOffset - 50, startingHeight);
-        // 产生16个波纹
-        for (int i = 0; i < mWaveNumber; i++) {
+        // 产生waveNumber个波纹
+        for (int i = 0; i < waveNumber; i++) {
             // 前半个波
             float x1 = -mClippingWidth + waveWidth * (i + 0.25f) + xOffset;
             float y1 = startingHeight - createRandomVariation(variationY);
@@ -166,8 +167,8 @@ public class WavesFillingTransform implements FillingTransform {
         Matrix matrix = new Matrix();
         if (mFillingOrientation == FillingOrientation.LEFT_TOP_TO_RIGHT_BOTTOM) {
             matrix.preRotate(-45f);
-            matrix.postTranslate(-0.5f * mViewHeight - 1.414f / 2 * (mClippingWidth - mViewHeight),
-                    0.5f * mViewHeight - 1.414f / 2 * (mClippingWidth - mViewHeight));
+            matrix.postTranslate(-0.5f * mViewHeight - 1.414f / 2 * (mClippingWidth - mWaveHeight),
+                    0.5f * mViewHeight - 1.414f / 2 * (mClippingWidth - mWaveHeight));
 
         } else if (mFillingOrientation == FillingOrientation.RIGHT_BOTTOM_TO_LEFT_TOP) {
             matrix.preRotate(-45f);
@@ -235,13 +236,8 @@ public class WavesFillingTransform implements FillingTransform {
             op = Region.Op.DIFFERENCE;
 
         } else if (mFillingOrientation == FillingOrientation.LEFT_TOP_TO_RIGHT_BOTTOM) {
-            if (mViewWidth > mViewHeight) {
-                offsetX = 0.707f * ((mViewWidth - mViewHeight + mClippingWidth) * percentage - mClippingWidth);
-                offsetY = offsetX;
-            } else {
-                offsetX = -0.707f * mClippingWidth * (1 - percentage);
-                offsetY = -0.707f * mClippingHeight * (1 - percentage);
-            }
+            offsetX = 0.707f * (mClippingWidth - mWaveHeight) * percentage;
+            offsetY = 0.707f * (mClippingHeight - mWaveHeight) * percentage;
             op = Region.Op.INTERSECT;
 
         } else if (mFillingOrientation == FillingOrientation.LEFT_BOTTOM_TO_RIGHT_TOP) {
