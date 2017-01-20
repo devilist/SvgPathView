@@ -67,10 +67,16 @@ public class PathView extends View {
 
         canvas.drawPath(oriPath1, oriPaint);
         Matrix matrix = new Matrix();
-        matrix.preTranslate(100,10);
-        matrix.preRotate(-90f);
+        matrix.preTranslate(100, 10);
+        matrix.preRotate(-45f);
         clipPath1.transform(matrix);
         canvas.clipPath(clipPath1, Region.Op.DIFFERENCE);
-        canvas.drawPath(oriPath1, clipPaint);
+//        canvas.drawPath(oriPath1, clipPaint);
+
+        Path textPath = new Path();
+        textPath.moveTo(300, 400);
+        textPath.lineTo(300, 600);
+        canvas.drawTextOnPath("晴川历历汉阳树", textPath, 0, 0, clipPaint);
+        canvas.drawText("晴川历历汉阳树", 300, 400, clipPaint);
     }
 }

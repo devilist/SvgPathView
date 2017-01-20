@@ -98,6 +98,9 @@ public class SvgPathView extends View {
 
     private void init() {
 
+        // 取消硬件加速
+//        this.setLayerType(LAYER_TYPE_SOFTWARE, null);
+
         WindowManager wm = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         mScreenWidth = wm.getDefaultDisplay().getWidth();
         mScreenHeight = wm.getDefaultDisplay().getHeight();
