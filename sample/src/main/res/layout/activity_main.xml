@@ -330,6 +330,12 @@
                                 android:layout_height="wrap_content"
                                 android:checked="true"
                                 android:text="路径4"/>
+                            <RadioButton
+                                android:id="@+id/rb_path_5"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                android:text="路径5"/>
 
                         </RadioGroup>
 
@@ -429,9 +435,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <com.svg.sample.widget.PathView
-                android:layout_width="match_parent"
-                android:layout_height="500dp"/>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

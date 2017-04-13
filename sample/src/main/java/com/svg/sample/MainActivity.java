@@ -85,6 +85,9 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.rb_path_4:
                         path_string = getResources().getString(R.string.path_world_map);
                         break;
+                    case R.id.rb_path_5:
+                        path_string = getResources().getString(R.string.heart);
+                        break;
                 }
 
             }
